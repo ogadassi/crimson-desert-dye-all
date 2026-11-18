@@ -1,0 +1,18 @@
+# build output (the release zip goes on GitHub Releases)
+plugin/build/
+dist/*.asi
+dist/*.zip
+dist/NEXUS_PAGE.txt
+
+# game files and game-code dumps stay local
+extracted/
+research/cache/
+research/*.asm
+research/trace_dump.txt
+research/old_src/
+
+# local
+__pycache__/
+*.pyc
+.claude/
+page/preview.html

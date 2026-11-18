@@ -1,0 +1,141 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Dye All panel</title>
+<style>
+  /* Colors and sizes copied from plugin/src/gui/panel.cpp (InitStyle, Render) at 1920x1080, scale 1. */
+  :root {
+    --bg: rgba(19, 16, 14, .94);       /* kBg 0.075 0.062 0.055 0.94 */
+    --text: #e6dbc7;                   /* kText */
+    --dim: #998f80;                    /* kTextDim */
+    --gold: #dbb361;                   /* kGold */
+    --bronze: #735738;                 /* kBronze */
+    --frame: #29211c;                  /* kFrame */
+    --crimson: 140, 31, 26;            /* kCrimson */
+  }
+  html, body { margin: 0; background: #0d0a09; overflow: hidden; }
+  .scene { position: relative; width: 1920px; height: 1080px; overflow: hidden;
+    background:
+      radial-gradient(55% 70% at 30% 45%, rgba(163,33,42,.20), transparent 70%),
+      radial-gradient(50% 60% at 85% 100%, rgba(201,164,92,.08), transparent 70%),
+      #0f0b0a; }
+  .scene .vig { position: absolute; inset: 0; box-shadow: inset 0 0 260px 60px rgba(0,0,0,.8); }
+
+  /* left: caption */
+  .cap { position: absolute; left: 130px; top: 250px; width: 1080px; color: #efe6d6; }
+  .kicker { font: 600 22px Bahnschrift, "Segoe UI", sans-serif; letter-spacing: .32em; text-transform: uppercase; color: #c9a45c; }
+  .cap h2 { font: 700 84px/1.02 "Sitka Display", Constantia, "Palatino Linotype", serif; margin: 22px 0 0; }
+  .cap h2 em { font-style: normal; color: #dbb361; }
+  .rule { width: 460px; height: 2px; margin: 34px 0 30px; background: linear-gradient(90deg, #c9a45c, rgba(201,164,92,0)); }
+  .pts { list-style: none; margin: 0; padding: 0; font: 30px/1.5 "Sitka Text", Constantia, serif; color: #d8ccb7; }
+  .pts li { display: flex; gap: 18px; align-items: baseline; margin: 10px 0; }
+  .pts i { flex: none; width: 18px; height: 18px; border-radius: 2px; transform: translateY(1px); }
+  .arrow { position: absolute; left: 1210px; top: 470px; width: 200px; height: 120px; }
+
+  /* right: the ImGui window, at the position the plugin uses: 24 px from the right, 90 px down */
+  .win { position: absolute; right: 24px; top: 90px; width: 460px; height: 778px; box-sizing: border-box;
+    background: var(--bg); border: 1px solid var(--bronze); border-radius: 2px; padding: 12px 16px;
+    font: 17px/1 "Segoe UI", sans-serif; color: var(--text); display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+  .row { display: flex; align-items: center; gap: 10px; min-height: 23px; }
+  .head { font: 22px Georgia, serif; color: var(--gold); }
+  .ver { color: var(--dim); white-space: pre; }
+  .sep { height: 1px; background: var(--bronze); margin: 6px 0; flex: none; }
+  .wrap { line-height: 23px; margin-bottom: 6px; }
+  .dim { color: var(--dim); }
+  .gold { color: var(--gold); }
+  .radio { display: inline-flex; align-items: center; gap: 7px; }
+  .radio b { width: 19px; height: 19px; border-radius: 50%; background: var(--frame); display: inline-grid; place-items: center; }
+  .radio b::after { content: ""; width: 9px; height: 9px; border-radius: 50%; background: transparent; }
+  .radio.on b::after { background: var(--text); }
+  .list { flex: 1; overflow: hidden; position: relative; margin-top: 6px; padding-right: 16px; }
+  .grp { color: var(--gold); margin: 10px 0 6px; line-height: 23px; }
+  .item { position: relative; display: flex; line-height: 23px; height: 23px; margin-bottom: 6px; padding: 0 4px; margin-left: -4px; }
+  .item .nm { flex: none; width: 74%; white-space: nowrap; overflow: hidden; }
+  .item .pl { color: var(--dim); }
+  .item.sel { background: rgba(var(--crimson), .40); }
+  .item.hov { background: rgba(var(--crimson), .60); }
+  .item.grey .nm { color: var(--dim); }
+  .sbar { position: absolute; right: 0; top: 0; bottom: 0; width: 12px; background: rgba(5,5,5,.53); }
+  .sbar i { position: absolute; left: 2px; right: 2px; top: 4px; height: 70px; border-radius: 6px; background: var(--bronze); }
+  .btn { background: var(--frame); padding: 5px 8px; border-radius: 2px; color: var(--text); white-space: nowrap; }
+  .btn.small { padding: 1px 4px; }
+  .foot { flex: none; }
+  .foot .row { margin-bottom: 6px; }
+  .tip { position: absolute; background: rgba(15,15,15,.94); border: 1px solid rgba(110,110,128,.5); padding: 7px 8px;
+    font: 17px "Segoe UI", sans-serif; color: var(--text); white-space: nowrap; z-index: 2; }
+  .cursor { position: absolute; z-index: 3; }
+</style>
+</head>
+<body>
+<div class="scene">
+  <div class="vig"></div>
+
+  <div class="cap">
+    <div class="kicker">Dye All &middot; at the camp dyer</div>
+    <h2>Every dyeable item you own,<br><em>one list.</em></h2>
+    <div class="rule"></div>
+    <ul class="pts">
+      <li><i style="background:#b3262e"></i>Bag, wardrobe, private chest and warehouse</li>
+      <li><i style="background:#e0a12f"></i>Double-click to wear it; the dyer shows it at once</li>
+      <li><i style="background:#2f6f9a"></i>Pick the next one: your colors are applied first</li>
+      <li><i style="background:#4f9a7c"></i>Close the dyer: everything goes back</li>
+    </ul>
+  </div>
+
+  <div class="win">
+    <div class="row"><span class="head">ALL DYEABLE ITEMS</span><span class="ver">  Dye All 1.0.0</span></div>
+    <div class="sep"></div>
+    <div class="wrap">293 dyeable items among 997 stored items.</div>
+    <div class="wrap dim">Point at this list to use it; the rest of the screen stays with the game.</div>
+    <div class="row" style="margin-top:4px">
+      <span class="dim">Sort by</span>
+      <span class="radio on"><b></b>Type</span>
+      <span class="radio"><b></b>Name</span>
+      <span class="radio"><b></b>Location</span>
+    </div>
+
+    <div class="list" id="list"><div class="sbar"><i></i></div></div>
+
+    <div class="sep"></div>
+    <div class="foot">
+      <div class="row"><span class="btn">Wear it to dye</span><span class="dim">Crimson Chaser Plate Helm</span></div>
+      <div class="row"><span class="btn">Put back now</span><span>Wearing Catfish Plate Helm from the Wardrobe (dresser).</span></div>
+      <div class="row"><span class="btn small">Refresh</span><span class="dim">(if the dyer's list looks out of date)</span></div>
+      <div class="row gold" style="line-height:23px">Colors applied to Catfish Plate Helm.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Real items from the test save (DyeAll.log of 2026-11-18 and plugin/data/dyeables.tsv).
+  const groups = [
+    ["Helmets", 38, [
+      ["Arkhan Leather Helm", "Bag"], ["Ashad Plate Helm", "Wardrobe"], ["Ator's Will Helm", "Wardrobe"],
+      ["Brimstone Gas Mask", "Bag"], ["Catfish Plate Helm", "Wardrobe"], ["Crimson Chaser Plate Helm", "Wardrobe", "hov"],
+      ["Delegation Leather Hat", "Wardrobe"], ["Desert Marauder's Plate Helm", "Wardrobe"],
+      ["Executioner of Darkness Plate Helm", "Wardrobe"], ["Frostcursed Plate Helm", "Wardrobe"],
+      ["Golden Free Company's Plate Helm", "Wardrobe"]]],
+    ["Body armor", 52, [
+      ["Blackwing Leather Armor", "Chest"], ["Duskfang Leather Armor", "Wardrobe"], ["Grey Wolf Leather Armor", "Chest"],
+      ["Helfryn Leather Armor", "Wardrobe"], ["Hungering Fang Leather Armor", "Wardrobe"]]],
+  ];
+  const list = document.getElementById("list");
+  for (const [label, n, items] of groups) {
+    list.insertAdjacentHTML("beforeend", `<div class="grp">${label} (${n})</div><div class="sep"></div>`);
+    for (const [nm, pl, st] of items)
+      list.insertAdjacentHTML("beforeend", `<div class="item ${st || ""}"><span class="nm">${nm}</span><span class="pl">${pl}</span></div>`);
+  }
+  // tooltip and cursor over the hovered row
+  const hov = list.querySelector(".item.hov").getBoundingClientRect();
+  document.querySelector(".scene").insertAdjacentHTML("beforeend",
+    `<div class="tip" id="tip" style="left:${hov.left + 150}px; top:${hov.bottom + 8}px">Double-click to wear it here for dyeing.</div>
+     <svg class="cursor" style="left:${hov.left + 128}px; top:${hov.top + 4}px" width="22" height="30" viewBox="0 0 22 30">
+       <path d="M1 1 L1 24 L7 18.5 L11 28 L15 26.3 L11 17 L19 17 Z" fill="#fff" stroke="#000" stroke-width="1.5" stroke-linejoin="round"/></svg>`);
+  // like ImGui, keep the tooltip on screen
+  const tip = document.getElementById("tip"), r = tip.getBoundingClientRect();
+  if (r.right > 1912) tip.style.left = (1912 - r.width) + "px";
+</script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Dye All art</title>
+<style>
+  :root {
+    --bg: #110d0c;
+    --ink: #efe6d6;
+    --dim: #a89a86;
+    --gold: #c9a45c;
+    --crimson: #a3212a;
+  }
+  html, body { margin: 0; padding: 0; background: var(--bg); overflow: hidden; }
+  .art { position: relative; overflow: hidden; background: var(--bg); color: var(--ink); }
+  .art .grain { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .55; }
+  .art .glow { position: absolute; inset: 0;
+    background:
+      radial-gradient(60% 90% at 78% 50%, rgba(163,33,42,.30), transparent 70%),
+      radial-gradient(40% 70% at 12% 110%, rgba(201,164,92,.10), transparent 70%); }
+  .art .vignette { position: absolute; inset: 0; box-shadow: inset 0 0 220px 40px rgba(0,0,0,.85); }
+  .strokes { position: absolute; }
+  .title { font-family: "Sitka Display", "Sitka Banner", Constantia, "Palatino Linotype", serif; font-weight: 700;
+    letter-spacing: .04em; line-height: .9; margin: 0; white-space: nowrap; }
+  .title span { display: inline-block; background-clip: text; -webkit-background-clip: text; color: transparent;
+    filter: drop-shadow(0 3px 0 rgba(0,0,0,.55)); }
+  .kicker { font-family: Bahnschrift, "Segoe UI", sans-serif; font-weight: 600; letter-spacing: .32em; text-transform: uppercase;
+    color: var(--gold); }
+  .tag { font-family: "Sitka Text", Constantia, "Palatino Linotype", serif; font-style: italic; color: var(--ink); }
+  .sub { font-family: Bahnschrift, "Segoe UI", sans-serif; color: var(--dim); letter-spacing: .06em; }
+  .rule { height: 2px; background: linear-gradient(90deg, var(--gold), rgba(201,164,92,0)); }
+
+  /* banner 1920 x 480 */
+  #banner { width: 1920px; height: 480px; }
+  #banner .text { position: absolute; left: 120px; top: 92px; }
+  #banner .kicker { font-size: 22px; }
+  #banner .title { font-size: 168px; margin-top: 14px; }
+  #banner .rule { width: 520px; margin: 22px 0 20px; }
+  #banner .tag { font-size: 34px; }
+  #banner .strokes { right: -40px; top: 40px; width: 980px; height: 400px; }
+
+  /* thumbnail 1280 x 720 */
+  #thumb { width: 1280px; height: 720px; }
+  #thumb .text { position: absolute; left: 0; right: 0; top: 96px; text-align: center; }
+  #thumb .kicker { font-size: 22px; }
+  #thumb .title { font-size: 196px; margin-top: 18px; }
+  #thumb .rule { width: 420px; margin: 26px auto 22px; background: linear-gradient(90deg, rgba(201,164,92,0), var(--gold), rgba(201,164,92,0)); }
+  #thumb .tag { font-size: 38px; }
+  #thumb .strokes { left: -60px; right: -60px; bottom: -30px; width: 1400px; height: 300px; }
+  #thumb .glow { background: radial-gradient(70% 80% at 50% 100%, rgba(163,33,42,.32), transparent 70%); }
+
+  /* Nexus header 1300 x 372: the banner layout at 1300/1920 scale, taller */
+  #banner.hdr { height: 549px; zoom: 0.677083; }
+  #banner.hdr .text { top: 140px; }
+  #banner.hdr .strokes { top: 74px; }
+  /* Nexus gallery 1920 x 1080: the thumbnail layout at 1.5x */
+  #thumb.gal { zoom: 1.5; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <filter id="rough" x="-5%" y="-20%" width="110%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.05" numOctaves="2" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="9" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="bristle" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.002 0.35" numOctaves="1" seed="3" result="t"/>
+      <feColorMatrix in="t" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -0.9 1.25" result="a"/>
+      <feComposite in="SourceGraphic" in2="a" operator="in"/>
+    </filter>
+    <filter id="grainf">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 .9  0 0 0 0 .85  0 0 0 0 .8  0 0 0 .07 0"/>
+    </filter>
+  </defs>
+</svg>
+
+<div id="stage"></div>
+
+<script>
+  // Medieval dye palette: madder, crimson, saffron, weld, verdigris, woad, indigo, tyrian, ochre, umber.
+  const DYES = ["#b3262e", "#d2532f", "#e0a12f", "#cdb847", "#4f9a7c", "#2f6f9a", "#33408a", "#7a2f6d", "#b9733a", "#e9dcc2"];
+  const LETTERS = "DYE ALL";
+
+  function title() {
+    // each letter "dyed" a different color: the spree
+    const order = [0, 2, 5, -1, 4, 7, 1];
+    return [...LETTERS].map((ch, i) => {
+      if (ch === " ") return '<span style="width:.28em"></span>';
+      const c = DYES[order[i]];
+      return `<span style="background-image:linear-gradient(175deg, ${c} 0%, ${c} 55%, color-mix(in srgb, ${c} 70%, #000) 100%)">${ch}</span>`;
+    }).join("");
+  }
+
+  function strokes(w, h, n, vertical) {
+    // n brush strokes, each a rough band of one dye
+    let s = `<svg class="strokes" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">`;
+    const band = h / n;
+    for (let i = 0; i < n; i++) {
+      const c = DYES[i % DYES.length];
+      const y = i * band * 0.92 + band * 0.1;
+      const x0 = 40 + (i % 3) * 30 + i * 18, x1 = w - 30 - ((i * 37) % 90);
+      const th = band * 0.86;
+      const tilt = -14 + (i % 2) * 6;
+      s += `<defs><linearGradient id="g${i}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="color-mix(in srgb, ${c} 75%, #fff)"/><stop offset=".45" stop-color="${c}"/>
+          <stop offset="1" stop-color="color-mix(in srgb, ${c} 70%, #000)"/></linearGradient></defs>`;
+      s += `<g filter="url(#rough)" transform="rotate(${tilt * 0.25} ${w / 2} ${y})">
+        <path d="M${x0} ${y + th * .55} C ${x0 + 60} ${y - 6}, ${x1 - 200} ${y + 4}, ${x1} ${y + th * .25}
+                 L ${x1 - 10} ${y + th * .95} C ${x1 - 240} ${y + th * 1.05}, ${x0 + 80} ${y + th * .9}, ${x0 + 14} ${y + th * .8} Z"
+              fill="${c}" opacity=".95" filter="url(#bristle)"/>
+      </g>`;
+    }
+    return s + "</svg>";
+  }
+
+  function grain() {
+    return '<svg class="grain" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" filter="url(#grainf)"/></svg>';
+  }
+
+  const which = (location.hash || "#banner").slice(1);
+  const stage = document.getElementById("stage");
+  if (which === "thumb" || which === "gallery") {
+    stage.innerHTML = `<div class="art${which === "gallery" ? " gal" : ""}" id="thumb"><div class="glow"></div>${strokes(1400, 300, 10)}
+      <div class="vignette"></div>${grain()}
+      <div class="text"><div class="kicker">A Crimson Desert mod</div>
+      <h1 class="title">${title()}</h1><div class="rule"></div>
+      <div class="tag">Dye everything you own, not just what you wear.</div></div></div>`;
+  } else {
+    stage.innerHTML = `<div class="art${which === "header" ? " hdr" : ""}" id="banner"><div class="glow"></div>${strokes(980, 400, 9)}
+      <div class="vignette"></div>${grain()}
+      <div class="text"><div class="kicker">A Crimson Desert mod</div>
+      <h1 class="title">${title()}</h1><div class="rule"></div>
+      <div class="tag">Ever wanted to go on a dyeing spree?</div></div></div>`;
+  }
+</script>
+</body>
+</html>
